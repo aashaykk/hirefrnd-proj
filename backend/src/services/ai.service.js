@@ -32,17 +32,32 @@ const interviewReportSchema = z.object({
 
 async function generateInterviewReport({ resume, selfDescription, jobDescription }) {
 
-    const prompt = ``
+    const prompt = `Generate an interview report for a candidate with the following details:
+    Resume: ${resume}
+    Self Description: ${selfDescription}
+    Job Description: ${jobDescription}
+
+    Please generate a JSON response with the following structure:
+    - matchScore: number (0-100)
+    - technicalQuestions: array of { question, intention, answer }
+    - behavioralQuestions: array of { question, intention, answer }
+    - skillGaps: array of { skill, severity (low/medium/high) }
+    - preparationPlan: array of { day, focus, tasks[] }
+    `
 
     const response = await ai.models.generateContent({
         model: "gemini-2.5-flash",
-        contents: "",
+        contents: prompt,
         config: {
             responseMimeType: "application/json",
             responseSchema: zodToJsonSchema(interviewReportSchema)
         }
     })
 
-    const jsonString = response.text
+    return JSON.parse(response.text)
 
+}
+
+module.exports = {
+    generateInterviewReport
 }
