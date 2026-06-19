@@ -3,17 +3,49 @@
     outline: none;
     padding-inline: 1.5rem;
     padding-block: 0.75rem;
-    border-radius: 1rem;
+    border-radius: 0.5rem; /* modern slightly rounded corners matching image */
     cursor: pointer;
+    font-weight: 500;
+    font-size: 0.95rem;
     transition: all 0.2s ease-in-out;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
 
     &.primary-button{
-        background-color: rgb(248, 65, 65);
+        background-color: #6366f1;
         color: white;
+
+        &:hover {
+            background-color: #4f46e5;
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+        }
+    }
+
+    &.social-button {
+        background-color: #ffffff;
+        color: #0f172a;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.5rem;
+        flex: 1;
+        padding-block: 0.625rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+
+        svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        &:hover {
+            background-color: #f8fafc;
+            border-color: #cbd5e1;
+        }
     }
 
     &:active {
-        transform: scale(0.9);
-        
+        transform: scale(0.97);
     }
-}
+}
