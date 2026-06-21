@@ -46,7 +46,7 @@ const Login = () => {
     <main className="auth-page">
       {/* Brand Header */}
       <div className="brand-header">
-        <span>Jobnosis.</span>
+        <span>Jobnosis</span>
       </div>
 
       {/* Main Form Card */}
@@ -59,7 +59,7 @@ const Login = () => {
           </svg>
         </div>
 
-        <h1>Ready for <i>Diagnosis</i>?</h1>
+        <h1>Ready for <i>Diagnosis?</i>?</h1>
         <p className="subtitle">Sign in and connect with your matches.</p>
 
         <form onSubmit={handleSubmit}>

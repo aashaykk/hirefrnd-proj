@@ -52,7 +52,7 @@ const Register = () => {
     <main className="auth-page">
       {/* Brand Header */}
       <div className="brand-header">
-        <span>Jobnosis.</span>
+        <span>Jobnosis</span>
       </div>
 
       {/* Main Form Card */}

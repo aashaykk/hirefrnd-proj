@@ -1,16 +1,58 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router'
 import { useAuth } from '../../auth/hooks/useAuth'
+import { useInterview } from '../hooks/useInterview'
 import "../style/home.scss"
 
 const Home = () => {
+  const { generateReport, loading: generating } = useInterview()
   const { user, handleLogout } = useAuth()
+  const navigate = useNavigate()
   const [selectedFileName, setSelectedFileName] = useState("")
+  const [jobDescription, setJobDescription] = useState("")
+  const [selfDescription, setSelfDescription] = useState("")
+  const [resumeFile, setResumeFile] = useState(null)
+  const [error, setError] = useState("")
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files.length > 0) {
-      setSelectedFileName(e.target.files[0].name)
+      const file = e.target.files[0]
+      setResumeFile(file)
+      setSelectedFileName(file.name)
+      setError("")
     } else {
+      setResumeFile(null)
       setSelectedFileName("")
+    }
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!resumeFile) {
+      setError("Please upload your resume (PDF format) first.")
+      return
+    }
+    if (!jobDescription.trim()) {
+      setError("Please paste the job description details.")
+      return
+    }
+
+    setError("")
+
+    try {
+      const response = await generateReport({
+        jobDescription,
+        selfDescription,
+        resume: resumeFile
+      })
+      if (response && response.interviewReport) {
+        navigate(`/interview/${response.interviewReport._id}`)
+      } else {
+        setError("Report was created but ID was missing from server response.")
+      }
+    } catch (err) {
+      console.error("Submission failed:", err)
+      setError(err?.response?.data?.message || "Failed to generate report. Please check your backend connection.")
     }
   }
 
@@ -34,12 +76,23 @@ const Home = () => {
       </header>
 
       {/* Main Container */}
-      <div className="dashboard-container">
+      <form onSubmit={handleSubmit} className="dashboard-container">
         {/* Welcome Section */}
         <section className="welcome-section">
           <h1>Generate <i>Interview</i> Report</h1>
           <p>Provide a job description and your profile credentials to get a customized AI interview roadmap.</p>
         </section>
+
+        {error && (
+          <div className="error-banner">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <span>{error}</span>
+          </div>
+        )}
 
         {/* Inputs Grid */}
         <div className="interview-grid">
@@ -57,7 +110,10 @@ const Home = () => {
               <textarea
                 name="jobDescription"
                 id="jobDescription"
+                value={jobDescription}
+                onChange={(e) => setJobDescription(e.target.value)}
                 placeholder="Paste the target job description or requirements here..."
+                required
               ></textarea>
             </div>
           </div>
@@ -113,6 +169,8 @@ const Home = () => {
               <textarea
                 name="selfDescription"
                 id="selfDescription"
+                value={selfDescription}
+                onChange={(e) => setSelfDescription(e.target.value)}
                 placeholder="Briefly describe your core skills, experiences, and background..."
               ></textarea>
             </div>
@@ -121,11 +179,33 @@ const Home = () => {
 
         {/* Generate Report Button */}
         <div className="submit-container">
-          <button className="button primary-button generate-button">
+          <button type="submit" className="button primary-button generate-button">
             Generate Interview Report
           </button>
         </div>
-      </div>
+      </form>
+
+      {/* Premium Loader Overlay */}
+      {generating && (
+        <div className="generating-overlay">
+          <div className="loader-card">
+            <div className="spinner-glow-container">
+              <div className="glowing-spinner"></div>
+            </div>
+            <h3>Diagnosing <i>Profile</i></h3>
+            <div className="loading-steps">
+              <div className="step-item active">Parsing resume profile...</div>
+              <div className="step-item">Analyzing target job description...</div>
+              <div className="step-item">Identifying potential skill gaps...</div>
+              <div className="step-item">Formulating preparation roadmap...</div>
+            </div>
+            <div className="loader-progress">
+              <div className="loader-progress-bar"></div>
+            </div>
+            <p className="loader-hint">Please wait. Jobnosis AI is scanning and aligning your qualifications to the role.</p>
+          </div>
+        </div>
+      )}
     </main>
   )
 }
