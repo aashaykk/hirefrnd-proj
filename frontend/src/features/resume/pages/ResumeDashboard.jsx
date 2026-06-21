@@ -1,33 +1,47 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router'
 import { useAuth } from '../../auth/hooks/useAuth'
-import { useInterview } from '../hooks/useInterview'
-import "../style/home.scss"
+import { useResume } from '../hooks/useResume'
+import "../style/resume.scss"
 
-const Home = () => {
-  const { generateReport, getAllReports, reports } = useInterview()
+const ResumeDashboard = () => {
+  const { generateResume, getAllResumes, resumes } = useResume()
   const { user, handleLogout } = useAuth()
   const navigate = useNavigate()
+  
   const [selectedFileName, setSelectedFileName] = useState("")
   const [jobDescription, setJobDescription] = useState("")
   const [selfDescription, setSelfDescription] = useState("")
   const [resumeFile, setResumeFile] = useState(null)
   const [error, setError] = useState("")
-  const [fetchingReports, setFetchingReports] = useState(true)
+  const [fetchingResumes, setFetchingResumes] = useState(true)
   const [generating, setGenerating] = useState(false)
+  const [loadingStep, setLoadingStep] = useState(0)
 
   useEffect(() => {
-    const fetchReports = async () => {
+    const fetchResumes = async () => {
       try {
-        await getAllReports()
+        await getAllResumes()
       } catch (err) {
-        console.error("Failed to load reports:", err)
+        console.error("Failed to load resumes:", err)
       } finally {
-        setFetchingReports(false)
+        setFetchingResumes(false)
       }
     }
-    fetchReports()
+    fetchResumes()
   }, [])
+
+  // Animate the loader steps
+  useEffect(() => {
+    if (!generating) {
+      setLoadingStep(0)
+      return
+    }
+    const interval = setInterval(() => {
+      setLoadingStep((prev) => (prev < 3 ? prev + 1 : prev))
+    }, 1800)
+    return () => clearInterval(interval)
+  }, [generating])
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -44,11 +58,11 @@ const Home = () => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!resumeFile) {
-      setError("Please upload your resume (PDF format) first.")
+      setError("Please upload your old resume (PDF format) first.")
       return
     }
     if (!jobDescription.trim()) {
-      setError("Please paste the job description details.")
+      setError("Please paste the target job description.")
       return
     }
 
@@ -56,19 +70,19 @@ const Home = () => {
     setGenerating(true)
 
     try {
-      const response = await generateReport({
+      const response = await generateResume({
         jobDescription,
         selfDescription,
         resume: resumeFile
       })
-      if (response && response.interviewReport) {
-        navigate(`/interview/${response.interviewReport._id}`)
+      if (response && response.resume) {
+        navigate(`/resume/${response.resume._id}`)
       } else {
-        setError("Report was created but ID was missing from server response.")
+        setError("Resume was created but ID was missing from server response.")
       }
     } catch (err) {
-      console.error("Submission failed:", err)
-      setError(err?.response?.data?.message || "Failed to generate report. Please check your backend connection.")
+      console.error("Resume generation failed:", err)
+      setError(err?.response?.data?.message || "Failed to generate tailored resume. Please verify backend connection.")
     } finally {
       setGenerating(false)
     }
@@ -83,14 +97,8 @@ const Home = () => {
     })
   }
 
-  const getScoreClass = (score) => {
-    if (score >= 80) return 'score-high'
-    if (score >= 50) return 'score-medium'
-    return 'score-low'
-  }
-
   return (
-    <main className="home">
+    <main className="resume-page">
       {/* Top Navbar Header */}
       <header className="dashboard-header">
         <div className="logo-nav-group">
@@ -98,8 +106,8 @@ const Home = () => {
             <span>Jobnosis.</span>
           </a>
           <nav className="header-navigation">
-            <button className="nav-link active" onClick={() => navigate("/")}>Interview Diagnosis</button>
-            <button className="nav-link" onClick={() => navigate("/resumes")}>Tailored Resumes</button>
+            <button className="nav-link" onClick={() => navigate("/")}>Interview Diagnosis</button>
+            <button className="nav-link active" onClick={() => navigate("/resumes")}>Tailored Resumes</button>
           </nav>
         </div>
         <div className="user-nav">
@@ -119,8 +127,8 @@ const Home = () => {
         <form onSubmit={handleSubmit} className="generator-form">
           {/* Welcome Section */}
           <section className="welcome-section">
-            <h1>Generate <i>Interview</i> Report</h1>
-            <p>Provide a job description and your profile credentials to get a customized AI interview roadmap.</p>
+            <h1>Tailor Your <i>Resume</i></h1>
+            <p>Paste a job description and upload your old resume to generate an aligned, single-page professional resume.</p>
           </section>
 
           {error && (
@@ -143,7 +151,7 @@ const Home = () => {
                   <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
                   <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
                 </svg>
-                Job <i>Description</i>
+                Target <i>Job Description</i>
               </h2>
               <div className="input-field-group">
                 <label htmlFor="jobDescription">Position Details</label>
@@ -168,13 +176,13 @@ const Home = () => {
                   <line x1="16" y1="17" x2="8" y2="17" />
                   <polyline points="10 9 9 9 8 9" />
                 </svg>
-                Your <i>Profile</i>
+                Your <i>Credentials</i>
               </h2>
 
               {/* Resume Upload Section */}
               <div className="input-field-group">
                 <p>
-                  Resume <span className="highlight">(PDF format recommended for best matching results)</span>
+                  Old Resume <span className="highlight">(PDF format required)</span>
                 </p>
                 <label className="file-drop-zone" htmlFor="resume">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -182,7 +190,7 @@ const Home = () => {
                     <polyline points="17 8 12 3 7 8" />
                     <line x1="12" y1="3" x2="12" y2="15" />
                   </svg>
-                  <span className="upload-title">Choose your resume file</span>
+                  <span className="upload-title">Choose your old resume file</span>
                   <span className="upload-subtitle">Click to browse your local files</span>
                   {selectedFileName && (
                     <span className="filename-display">
@@ -205,34 +213,34 @@ const Home = () => {
 
               {/* Self Description Section */}
               <div className="input-field-group">
-                <label htmlFor="selfDescription">Your Self Description</label>
+                <label htmlFor="selfDescription">Self Description / Preferences</label>
                 <textarea
                   name="selfDescription"
                   id="selfDescription"
                   value={selfDescription}
                   onChange={(e) => setSelfDescription(e.target.value)}
-                  placeholder="Briefly describe your core skills, experiences, and background..."
+                  placeholder="Describe details you want to emphasize or highlight (e.g. emphasize backend experience, highlight docker projects)..."
                 ></textarea>
               </div>
             </div>
           </div>
 
-          {/* Generate Report Button */}
+          {/* Generate Button */}
           <div className="submit-container">
             <button type="submit" className="button primary-button generate-button">
-              Generate Interview Report
+              Generate Tailored Resume
             </button>
           </div>
         </form>
 
-        {/* Recent Reports Section */}
+        {/* Recent Resumes Section */}
         <section className="recent-reports-section">
           <div className="section-header">
-            <h2>Recent <i>Reports</i></h2>
-            <p>Your previously generated interview readiness reports and matching profiles.</p>
+            <h2>Recent <i>Tailored Resumes</i></h2>
+            <p>Your previously aligned single-page resumes.</p>
           </div>
 
-          {fetchingReports ? (
+          {fetchingResumes ? (
             <div className="reports-skeleton-grid">
               {[1, 2, 3].map((n) => (
                 <div key={n} className="report-card skeleton">
@@ -246,16 +254,16 @@ const Home = () => {
                 </div>
               ))}
             </div>
-          ) : reports && reports.length > 0 ? (
+          ) : resumes && resumes.length > 0 ? (
             <div className="reports-grid">
-              {reports.map((reportItem) => (
+              {resumes.map((resItem) => (
                 <div
-                  key={reportItem._id}
+                  key={resItem._id}
                   className="report-card"
-                  onClick={() => navigate(`/interview/${reportItem._id}`)}
+                  onClick={() => navigate(`/resume/${resItem._id}`)}
                 >
                   <div className="card-content">
-                    <h3 className="report-title">{reportItem.title}</h3>
+                    <h3 className="report-title">{resItem.resumeData.name}'s Resume</h3>
                     <span className="report-date">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
@@ -263,14 +271,10 @@ const Home = () => {
                         <line x1="8" y1="2" x2="8" y2="6" />
                         <line x1="3" y1="10" x2="21" y2="10" />
                       </svg>
-                      {formatDate(reportItem.createdAt)}
+                      {formatDate(resItem.createdAt)}
                     </span>
                   </div>
                   <div className="card-badge-area">
-                    <div className={`score-badge ${getScoreClass(reportItem.matchScore)}`}>
-                      <span className="score-val">{reportItem.matchScore || 0}%</span>
-                      <span className="score-lbl">Match</span>
-                    </div>
                     <span className="arrow-icon">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                         <line x1="5" y1="12" x2="19" y2="12" />
@@ -292,8 +296,8 @@ const Home = () => {
                   <polyline points="10 9 9 9 8 9" />
                 </svg>
               </div>
-              <h4>No Reports Found</h4>
-              <p>You haven't generated any interview reports yet. Paste a job description and upload your resume above to get started.</p>
+              <h4>No Resumes Found</h4>
+              <p>You haven't generated any tailored resumes yet. Provide a target job description and upload your credentials above to get started.</p>
             </div>
           )}
         </section>
@@ -306,17 +310,17 @@ const Home = () => {
             <div className="spinner-glow-container">
               <div className="glowing-spinner"></div>
             </div>
-            <h3>Diagnosing <i>Profile</i></h3>
+            <h3>Tailoring <i>Profile</i></h3>
             <div className="loading-steps">
-              <div className="step-item active">Parsing resume profile...</div>
-              <div className="step-item">Analyzing target job description...</div>
-              <div className="step-item">Identifying potential skill gaps...</div>
-              <div className="step-item">Formulating preparation roadmap...</div>
+              <div className={`step-item ${loadingStep >= 0 ? 'active' : ''}`}>Extracting profile from old resume...</div>
+              <div className={`step-item ${loadingStep >= 1 ? 'active' : ''}`}>Aligning qualifications to job description...</div>
+              <div className={`step-item ${loadingStep >= 2 ? 'active' : ''}`}>Bolding key technologies & styling sections...</div>
+              <div className={`step-item ${loadingStep >= 3 ? 'active' : ''}`}>Generating single-page PDF print layout...</div>
             </div>
             <div className="loader-progress">
               <div className="loader-progress-bar"></div>
             </div>
-            <p className="loader-hint">Please wait. Jobnosis AI is scanning and aligning your qualifications to the role.</p>
+            <p className="loader-hint">Please wait. Jobnosis AI is restructuring and compiling your resume to fit exactly on one page.</p>
           </div>
         </div>
       )}
@@ -324,4 +328,4 @@ const Home = () => {
   )
 }
 
-export default Home
+export default ResumeDashboard
