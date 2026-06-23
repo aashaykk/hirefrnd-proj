@@ -1,7 +1,7 @@
 import axios from "axios"
 
 const api = axios.create({
-    baseURL: "http://localhost:3000",
+    baseURL: import.meta.env.VITE_API_URL || "",
     withCredentials: true
 })
 
@@ -37,7 +37,8 @@ export const updateResume = async ({ resumeId, resumeData }) => {
 }
 
 export const getResumePdfDownloadUrl = (resumeId) => {
-    return `http://localhost:3000/api/resume/${resumeId}/pdf`
+    const apiBase = import.meta.env.VITE_API_URL || ""
+    return `${apiBase}/api/resume/${resumeId}/pdf`
 }
 
 export const getResumePdfBlob = async (resumeId) => {
